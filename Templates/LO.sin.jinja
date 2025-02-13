@@ -1,0 +1,92 @@
+model = SM_HEFT_LO (ufo ("{{ model_path }}"))
+form_threads=1
+$integration_method = "vamp2"
+$rng_method = "rng_stream"
+$vamp_parallel_method = "simple"
+
+######################
+# physics parameters #
+######################
+MB = 0
+
+{% for param, value in parameters %}
+    {{ param }} = {{ value }}
+{% endfor %}
+
+########
+# cuts #
+########
+
+jet_algorithm = antikt_algorithm
+jet_r = 0.4
+cuts =
+     let subevt @clustered_jets = cluster [nlojet] in
+     let subevt @selected_jets = select if ((Pt > 20 GeV) and (abs (Rap) < 4.5)) [@clustered_jets] in
+     let subevt @sorted_jets = sort by Pt [@selected_jets] in
+     let subevt @hardest_jet = extract index -1 [@sorted_jets] in
+     let subevt @second_hardest_jet = extract index -2 [@sorted_jets] in
+     count [@selected_jets] >= 2
+     and all abs (Eta) >= 4. [@hardest_jet, @second_hardest_jet]
+     and all M > 600 GeV [@hardest_jet, @second_hardest_jet]
+
+#################
+# process setup #
+#################
+sqrts = 13600 GeV
+
+renormalization_scale = {{ scale }} * sqrt(MH/2 * sqrt((MH/2)^2 + eval Pt^2 [H, H]))
+factorization_scale = {{ scale }} * sqrt(MH/2 * sqrt((MH/2)^2 + eval Pt^2 [H, H]))
+
+beams = p, p => lhapdf
+$lhapdf_file = "PDF4LHC21_mc"
+
+?alphas_is_fixed = false
+?alphas_from_lhapdf = true
+
+$method = "gosam"
+
+alpha_power = 4
+alphas_power = 0
+$exclude_gauge_splittings = "t"
+
+alias pr = u:d:s:c:b:"u~":"d~":"s~":"c~":"b~"
+alias lojet = u:d:s:c:b:"u~":"d~":"s~":"c~":"b~"
+alias nlojet = u:d:s:c:b:"u~":"d~":"s~":"c~":"b~":g
+
+process VBF_LO = pr, pr => H, H, lojet, lojet
+
+$compile_workspace = "libs_lo"
+
+compile ()
+
+###############
+# integration #
+###############
+relative_error_goal = 0.001
+$integrate_workspace = "grid_lo"
+?vis_history = false
+
+seed = {{ seed }}
+integrate(VBF_LO) { iterations = 5:100000:"gw", 15:100000}
+
+{% if generate_events %}
+####################
+# event generation #
+####################
+n_events = {{ n_events }}
+checkpoint = n_events / 100
+
+?fixed_order_nlo_events = true
+?unweighted = false
+?negative_weights = true
+
+?write_raw = false
+sample_format = hepmc
+$sample = "VBF_LO"
+?hepmc_output_cross_section = true
+?keep_failed_events = true
+
+seed = {{ evt_gen_seed }}
+
+simulate (VBF_LO) {}
+{% endif %}
