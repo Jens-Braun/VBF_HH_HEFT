@@ -240,7 +240,7 @@ clambda = Parameter(name = 'clambda',
                  nature = 'external',
                  type = 'real',
                  value = 1.0,
-                 texname = 'c_\lambda',
+                 texname = 'c_\\lambda',
                  lhablock = 'HEFT',
                  lhacode = [ 1 ])
 

@@ -9,9 +9,9 @@ $vamp_parallel_method = "simple"
 ######################
 MB = 0
 
-{%- for param, value in parameters %}
-{{ param }} = {{ value }}
-{%- endfor %}
+{% for param, value in parameters %}
+    {{ param }} = {{ value }}
+{% endfor %}
 
 ########
 # cuts #
@@ -53,9 +53,12 @@ alias pr = u:d:s:c:b:"u~":"d~":"s~":"c~":"b~"
 alias lojet = u:d:s:c:b:"u~":"d~":"s~":"c~":"b~"
 alias nlojet = u:d:s:c:b:"u~":"d~":"s~":"c~":"b~":g
 
-process VBF_LO = pr, pr => H, H, lojet, lojet
+process VBF_BORN = pr, pr => H, H, lojet, lojet
+process VBF_REAL = pr, pr => H, H, lojet, lojet { nlo_calculation = real }
+process VBF_VIRTUAL = pr, pr => H, H, lojet, lojet { nlo_calculation = virtual }
+process VBF_DGLAP = pr, pr => H, H, lojet, lojet { nlo_calculation = dglap }
 
-$compile_workspace = "libs_lo"
+$compile_workspace = "libs"
 
 compile ()
 
@@ -63,11 +66,20 @@ compile ()
 # integration #
 ###############
 relative_error_goal = 0.001
-$integrate_workspace = "grid_lo"
+
+$integrate_workspace = "grid"
+
 ?vis_history = false
 
+mult_call_real = 2
+mult_call_virt = 0.5
+
 seed = {{ seed }}
-integrate(VBF_LO) { iterations = 5:100000:"gw", 15:100000}
+
+integrate(VBF_BORN) { iterations = 5:100000:"gw", 15:100000}
+integrate(VBF_REAL) { iterations = 5:100000:"gw", 15:100000}
+integrate(VBF_VIRTUAL) { iterations = 5:100000:"gw", 15:100000}
+integrate(VBF_DGLAP) { iterations = 5:100000:"gw", 15:100000}
 
 {% if generate_events %}
 ####################
@@ -82,11 +94,14 @@ checkpoint = n_events / 100
 
 ?write_raw = false
 sample_format = hepmc
-$sample = "VBF_LO"
 ?hepmc_output_cross_section = true
 ?keep_failed_events = true
 
 seed = {{ evt_gen_seed }}
 
-simulate (VBF_LO) {}
+simulate (VBF_BORN) { $sample = "VBF_BORN" n_events = 500000 checkpoint = n_events/100 }
+simulate (VBF_REAL) { $sample = "VBF_REAL" n_events = 2000000 checkpoint = n_events/100 }
+simulate (VBF_VIRTUAL) { $sample = "VBF_VIRTUAL" n_events = 250000 checkpoint = n_events/100 }
+simulate (VBF_DGLAP) { $sample = "VBF_DGLAP" n_events = 500000 checkpoint = n_events/100 }
+
 {% endif %}

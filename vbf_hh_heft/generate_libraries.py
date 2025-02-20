@@ -6,8 +6,9 @@ import os
 import pathlib
 import re
 import glob
+import json
 
-from vbf_hh_heft.util import get_src_location, execute_alt_screen
+from vbf_hh_heft.util import get_src_location, execute_alt_screen, setup_env, get_install_info
 
 
 def generate_libraries(template_path):
@@ -34,12 +35,17 @@ def generate_libraries(template_path):
             sindarin.write(input_string)
         os.chdir(tmpdir)
         execute_alt_screen(f"Generating libraries for {template_path}", [
-            "whizard --single-event input.sin"
-        ], logfile=os.path.join(get_src_location(), "vbf_hh_heft.log"))
+            f"{get_install_info()['prefix']}/bin/whizard --single-event input.sin"
+        ],
+                           logfile=os.path.join(get_src_location(), "vbf_hh_heft.log"),
+                           env = setup_env(),
+                           )
         with tarfile.open(os.path.join(get_src_location(), "Libraries", template_name + ".tar.gz"), "w:gz") as archive:
             archive.add(re.findall(r'\$compile_workspace = "(.+)"', input_string)[0])
-            for process in re.findall(r'process\s+([a-zA-Z0-9_+\-])\s*=', input_string):
-                archive.add(f"{process}_olp_modules/build/libgolem_olp.so")
+            for process in re.findall(r'process\s+(\S+)(?=\s)\s*=', input_string):
+                for type in ["BORN", "REAL", "LOOP", "DGLAP"]:
+                    if os.path.exists(f"{process}_{type}_olp_modules/build/libgolem_olp.so"):
+                        archive.add(f"{process}_{type}_olp_modules/build/libgolem_olp.so")
             for file in glob.glob("*.ol?"):
                 archive.add(file)
     info(f"Finished generating libraries for template '{template_path}'")

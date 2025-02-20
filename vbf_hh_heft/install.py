@@ -4,6 +4,7 @@ import os
 from functools import partial
 import shutil
 import sys
+import json
 from rich.progress import (
     BarColumn,
     DownloadColumn,
@@ -57,8 +58,8 @@ package_data = {
         "install": "make install -j {jobs}"
     },
     "gosam": {
-        "url": "https://github.com/gudrunhe/gosam/releases/download/3.0.0/GoSam-3.0.0-86a5d74.tar.gz",
-        "dirname": "GoSam-3.0.0-86a5d74",
+        "url": "https://github.com/gudrunhe/gosam/releases/download/3.0.0/GoSam-3.0.0-1c107f1.tar.gz",
+        "dirname": "GoSam-3.0.0-1c107f1",
         "configure": "meson setup build --prefix {prefix}",
         "build": "meson compile -C build -j {jobs}",
         "install": "meson install -C build"
@@ -70,7 +71,7 @@ package_data = {
                      "--enable-lhapdf LHAPDF_DIR={prefix} " +
                      "--enable-hepmc --with-hepmc={prefix} " +
                      "--enable-fastjet --with-fastjet={prefix} " +
-                     "--enable-gosam --with-gosam={prefix}/bin/GoSam",
+                     "--enable-gosam --with-gosam={prefix}",
         "mpi_flags": "FC=mpifort CC=mpicc CXX=mpic++ --enable-fc-mpi",
         "install": "make install -j {jobs}"
     }
@@ -226,7 +227,7 @@ def install_rivet(args):
         info(f"[5/{len(package_data)}] Successfully installed Rivet")
 
 def install_gosam(args):
-    if os.path.isfile(os.path.join(args.prefix, "bin/GoSam/gosam.py")):
+    if os.path.isfile(os.path.join(args.prefix, "bin/gosam.py")):
         info(f"[6/{len(package_data)}] GoSam already installed in {args.prefix}, skipping")
         return
     info(f"[6/{len(package_data)}] Installing GoSam...")
@@ -281,5 +282,11 @@ def install(args):
     install_rivet(args)
     install_gosam(args)
     install_whizard(args)
-    os.remove("install.log")
+    if os.path.isfile("install.log"):
+        os.remove("install.log")
     info(f"Successfully installed VBF_HH_HEFT toolchain to {args.prefix}")
+    with open("installation.json", "w") as file:
+        json.dump({
+            "prefix": args.prefix,
+            "mpi": args.mpi,
+        }, file)
