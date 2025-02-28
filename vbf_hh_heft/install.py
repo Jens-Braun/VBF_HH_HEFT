@@ -22,18 +22,20 @@ package_data = {
     "lhapdf": {
         "url": "https://lhapdf.hepforge.org/downloads/LHAPDF-6.5.5.tar.gz",
         "dirname": "LHAPDF-6.5.5",
-        "pdf_urls": ["https://lhapdfsets.web.cern.ch/lhapdfsets/current/PDF4LHC21_mc.tar.gz",
-                     "https://lhapdfsets.web.cern.ch/lhapdfsets/current/CT10.tar.gz",
-                     "https://lhapdfsets.web.cern.ch/lhapdfsets/current/cteq6l1.tar.gz"],
+        "pdf_urls": [
+            "https://lhapdfsets.web.cern.ch/lhapdfsets/current/PDF4LHC21_mc.tar.gz",
+            "https://lhapdfsets.web.cern.ch/lhapdfsets/current/CT10.tar.gz",
+            "https://lhapdfsets.web.cern.ch/lhapdfsets/current/cteq6l1.tar.gz",
+        ],
         "configure": "./configure --prefix={prefix}",
-        "install": "make install -j {jobs}"
+        "install": "make install -j {jobs}",
     },
     "hepmc": {
         "url": "https://hepmc.web.cern.ch/hepmc/releases/HepMC3-3.3.0.tar.gz",
         "dirname": "HepMC3-3.3.0",
         "configure": "cmake -DCMAKE_INSTALL_PREFIX={prefix} -DHEPMC3_ENABLE_ROOTIO=OFF   -DHEPMC3_ENABLE_PYTHON=OFF CMakeLists.txt",
         "build": "cmake --build . -j {jobs}",
-        "install": "cmake --install ."
+        "install": "cmake --install .",
     },
     "fastjet": {
         "url": "https://fastjet.fr/repo/fastjet-3.4.3.tar.gz",
@@ -43,59 +45,60 @@ package_data = {
         "contrib_url": "https://fastjet.hepforge.org/contrib/downloads/fjcontrib-1.100.tar.gz",
         "contrib_dirname": "fjcontrib-1.100",
         "contrib_configure": "./configure --fastjet-config={prefix}/bin/fastjet-config CXXFLAGS=-fPIC",
-        "contrib_install": "make install fragile-shared-install -j {jobs}"
+        "contrib_install": "make install fragile-shared-install -j {jobs}",
     },
     "yoda": {
         "url": "https://yoda.hepforge.org/downloads/YODA-2.0.2.tar.gz",
         "dirname": "YODA-2.0.2",
         "configure": "./configure --prefix={prefix}",
-        "install": "make install -j {jobs}"
+        "install": "make install -j {jobs}",
     },
     "rivet": {
         "url": "https://rivet.hepforge.org/downloads/Rivet-4.0.2.tar.gz",
         "dirname": "Rivet-4.0.2",
         "configure": "./configure --prefix={prefix} --with-yoda={prefix} --with-hepmc={prefix} --with-fastjet={prefix}",
-        "install": "make install -j {jobs}"
+        "install": "make install -j {jobs}",
     },
     "gosam": {
         "url": "https://github.com/gudrunhe/gosam/releases/download/3.0.0/GoSam-3.0.0-1c107f1.tar.gz",
         "dirname": "GoSam-3.0.0-1c107f1",
         "configure": "meson setup build --prefix {prefix}",
         "build": "meson compile -C build -j {jobs}",
-        "install": "meson install -C build"
+        "install": "meson install -C build",
     },
     "whizard": {
         "url": "https://whizard.hepforge.org/downloads/whizard-3.1.6.tar.gz",
         "dirname": "whizard-3.1.6",
-        "configure": "./configure --prefix={prefix} " +
-                     "--enable-lhapdf LHAPDF_DIR={prefix} " +
-                     "--enable-hepmc --with-hepmc={prefix} " +
-                     "--enable-fastjet --with-fastjet={prefix} " +
-                     "--enable-gosam --with-gosam={prefix}",
+        "configure": "../configure --prefix={prefix} "
+        + "--enable-lhapdf LHAPDF_DIR={prefix} "
+        + "--enable-hepmc --with-hepmc={prefix} "
+        + "--enable-fastjet --with-fastjet={prefix} "
+        + "--enable-gosam --with-gosam={prefix}",
         "mpi_flags": "FC=mpifort CC=mpicc CXX=mpic++ --enable-fc-mpi",
-        "install": "make install -j {jobs}"
-    }
+        "install": "make install -j {jobs}",
+    },
 }
 
 src_dir = os.getcwd()
 
+
 def download_archive(url):
     info(f"Downloading {url}...")
     with Progress(
-            TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
-            BarColumn(bar_width=None),
-            "[progress.percentage]{task.percentage:>3.1f}%",
-            "•",
-            DownloadColumn(),
-            "•",
-            TransferSpeedColumn(),
-            "•",
-            TimeRemainingColumn(),
-            transient=True,
-        ) as progress:
+        TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
+        BarColumn(bar_width=None),
+        "[progress.percentage]{task.percentage:>3.1f}%",
+        "•",
+        DownloadColumn(),
+        "•",
+        TransferSpeedColumn(),
+        "•",
+        TimeRemainingColumn(),
+        transient=True,
+    ) as progress:
         filename = url.split("/")[-1]
         task_id = progress.add_task("download", filename=filename, start=False)
-        response = urlopen(Request(url, headers={'User-Agent': 'vbf_hh_heft', 'Accept': '*/*'}))
+        response = urlopen(Request(url, headers={"User-Agent": "vbf_hh_heft", "Accept": "*/*"}))
         if response.info()["Content-length"]:
             progress.update(task_id, total=int(response.info()["Content-length"]))
         else:
@@ -118,6 +121,7 @@ def download_unpack(url, dest_dir, dirname):
     else:
         info(f"Using existing '{dirname}'")
 
+
 def install_lhapdf(args):
     if os.path.isfile(os.path.join(args.prefix, "bin/lhapdf-config")):
         info(f"[1/{len(package_data)}] LHAPDF already installed in {args.prefix}, skipping")
@@ -126,10 +130,14 @@ def install_lhapdf(args):
     os.chdir("download_cache")
     download_unpack(package_data["lhapdf"]["url"], ".", package_data["lhapdf"]["dirname"])
     os.chdir(package_data["lhapdf"]["dirname"])
-    execute_alt_screen("Installing LHAPDF...", [
-        package_data["lhapdf"]["configure"].format(prefix=args.prefix),
-        package_data["lhapdf"]["install"].format(jobs=args.jobs)
-    ], logfile=os.path.join(src_dir, "install.log"))
+    execute_alt_screen(
+        "Installing LHAPDF...",
+        [
+            package_data["lhapdf"]["configure"].format(prefix=args.prefix),
+            package_data["lhapdf"]["install"].format(jobs=args.jobs),
+        ],
+        logfile=os.path.join(src_dir, "install.log"),
+    )
     os.chdir("..")
     for pdf_url in package_data["lhapdf"]["pdf_urls"]:
         pdf = pdf_url.split("/")[-1].split(".")[0]
@@ -142,6 +150,7 @@ def install_lhapdf(args):
     else:
         info(f"[1/{len(package_data)}] Successfully installed LHAPDF and the required PDFs")
 
+
 def install_hepmc(args):
     if os.path.isfile(os.path.join(args.prefix, "bin/HepMC3-config")):
         info(f"[2/{len(package_data)}] HepMC already installed in {args.prefix}, skipping")
@@ -150,17 +159,22 @@ def install_hepmc(args):
     os.chdir("download_cache")
     download_unpack(package_data["hepmc"]["url"], ".", package_data["hepmc"]["dirname"])
     os.chdir(package_data["hepmc"]["dirname"])
-    execute_alt_screen("Installing HepMC...", [
-        package_data["hepmc"]["configure"].format(prefix=args.prefix),
-        package_data["hepmc"]["build"].format(jobs=args.jobs),
-        package_data["hepmc"]["install"]
-    ], logfile=os.path.join(src_dir, "install.log"))
+    execute_alt_screen(
+        "Installing HepMC...",
+        [
+            package_data["hepmc"]["configure"].format(prefix=args.prefix),
+            package_data["hepmc"]["build"].format(jobs=args.jobs),
+            package_data["hepmc"]["install"],
+        ],
+        logfile=os.path.join(src_dir, "install.log"),
+    )
     os.chdir("../..")
     if not os.path.isfile(os.path.join(args.prefix, "bin/HepMC3-config")):
         critical("An error occurred while installing HepMC, see 'install.log' for details")
         sys.exit(1)
     else:
         info(f"[2/{len(package_data)}] Successfully installed HepMC")
+
 
 def install_fastjet(args):
     if os.path.isfile(os.path.join(args.prefix, "bin/fastjet-config")):
@@ -170,23 +184,32 @@ def install_fastjet(args):
     os.chdir("download_cache")
     download_unpack(package_data["fastjet"]["url"], ".", package_data["fastjet"]["dirname"])
     os.chdir(package_data["fastjet"]["dirname"])
-    execute_alt_screen("Installing FastJet...", [
-        package_data["fastjet"]["configure"].format(prefix=args.prefix),
-        package_data["fastjet"]["install"].format(jobs=args.jobs)
-    ], logfile=os.path.join(src_dir, "install.log"))
+    execute_alt_screen(
+        "Installing FastJet...",
+        [
+            package_data["fastjet"]["configure"].format(prefix=args.prefix),
+            package_data["fastjet"]["install"].format(jobs=args.jobs),
+        ],
+        logfile=os.path.join(src_dir, "install.log"),
+    )
     os.chdir("..")
     download_unpack(package_data["fastjet"]["contrib_url"], ".", package_data["fastjet"]["contrib_dirname"])
     os.chdir(package_data["fastjet"]["contrib_dirname"])
-    execute_alt_screen("Installing FastJet contrib...", [
-        package_data["fastjet"]["contrib_configure"].format(prefix=args.prefix),
-        package_data["fastjet"]["contrib_install"].format(jobs=args.jobs)
-    ], logfile=os.path.join(src_dir, "install.log"))
+    execute_alt_screen(
+        "Installing FastJet contrib...",
+        [
+            package_data["fastjet"]["contrib_configure"].format(prefix=args.prefix),
+            package_data["fastjet"]["contrib_install"].format(jobs=args.jobs),
+        ],
+        logfile=os.path.join(src_dir, "install.log"),
+    )
     os.chdir("../..")
     if not os.path.isfile(os.path.join(args.prefix, "bin/fastjet-config")):
         critical("An error occurred while installing FastJet, see 'install.log' for details")
         sys.exit(1)
     else:
         info(f"[3/{len(package_data)}] Successfully installed FastJet")
+
 
 def install_yoda(args):
     if os.path.isfile(os.path.join(args.prefix, "bin/yoda-config")):
@@ -196,16 +219,21 @@ def install_yoda(args):
     os.chdir("download_cache")
     download_unpack(package_data["yoda"]["url"], ".", package_data["yoda"]["dirname"])
     os.chdir(package_data["yoda"]["dirname"])
-    execute_alt_screen("Installing Yoda...", [
-        package_data["yoda"]["configure"].format(prefix=args.prefix),
-        package_data["yoda"]["install"].format(jobs=args.jobs)
-    ], logfile=os.path.join(src_dir, "install.log"))
+    execute_alt_screen(
+        "Installing Yoda...",
+        [
+            package_data["yoda"]["configure"].format(prefix=args.prefix),
+            package_data["yoda"]["install"].format(jobs=args.jobs),
+        ],
+        logfile=os.path.join(src_dir, "install.log"),
+    )
     os.chdir("../..")
     if not os.path.isfile(os.path.join(args.prefix, "bin/yoda-config")):
         critical("An error occurred while installing Yoda, see 'install.log' for details")
         sys.exit(1)
     else:
         info(f"[4/{len(package_data)}] Successfully installed Yoda")
+
 
 def install_rivet(args):
     if os.path.isfile(os.path.join(args.prefix, "bin/rivet-config")):
@@ -215,16 +243,23 @@ def install_rivet(args):
     os.chdir("download_cache")
     download_unpack(package_data["rivet"]["url"], ".", package_data["rivet"]["dirname"])
     os.chdir(package_data["rivet"]["dirname"])
-    execute_alt_screen("Installing Rivet...", [
-        package_data["rivet"]["configure"].format(prefix=args.prefix),
-        package_data["rivet"]["install"].format(jobs=args.jobs)
-    ], logfile=os.path.join(src_dir, "install.log"))
+    execute_alt_screen(
+        "Installing Rivet...",
+        [
+            package_data["rivet"]["configure"].format(prefix=args.prefix),
+            package_data["rivet"]["install"].format(jobs=args.jobs),
+        ],
+        logfile=os.path.join(src_dir, "install.log"),
+    )
+    if os.path.isfile("rivetenv.sh"):
+        shutil.copy2("rivetenv.sh", os.path.join(args.prefix, "share", "Rivet"))
     os.chdir("../..")
     if not os.path.isfile(os.path.join(args.prefix, "bin/rivet-config")):
         critical("An error occurred while installing Rivet, see 'install.log' for details")
         sys.exit(1)
     else:
         info(f"[5/{len(package_data)}] Successfully installed Rivet")
+
 
 def install_gosam(args):
     if os.path.isfile(os.path.join(args.prefix, "bin/gosam.py")):
@@ -234,16 +269,21 @@ def install_gosam(args):
     os.chdir("download_cache")
     download_unpack(package_data["gosam"]["url"], ".", package_data["gosam"]["dirname"])
     os.chdir(package_data["gosam"]["dirname"])
-    execute_alt_screen("Installing GoSam...", [
-        package_data["gosam"]["configure"].format(prefix=args.prefix),
-        package_data["gosam"]["install"].format(jobs=args.jobs)
-    ], logfile=os.path.join(src_dir, "install.log"))
+    execute_alt_screen(
+        "Installing GoSam...",
+        [
+            package_data["gosam"]["configure"].format(prefix=args.prefix),
+            package_data["gosam"]["install"].format(jobs=args.jobs),
+        ],
+        logfile=os.path.join(src_dir, "install.log"),
+    )
     os.chdir("../..")
     if not os.path.isfile(os.path.join(args.prefix, "bin/GoSam/gosam.py")):
         critical("An error occurred while installing GoSam, see 'install.log' for details")
         sys.exit(1)
     else:
         info(f"[6/{len(package_data)}] Successfully installed GoSam")
+
 
 def install_whizard(args):
     if os.path.isfile(os.path.join(args.prefix, "bin/whizard-config")):
@@ -253,17 +293,25 @@ def install_whizard(args):
     os.chdir("download_cache")
     download_unpack(package_data["whizard"]["url"], ".", package_data["whizard"]["dirname"])
     os.chdir(package_data["whizard"]["dirname"])
-    execute_alt_screen("Installing Whizard...", [
-        package_data["whizard"]["configure"].format(prefix=args.prefix)
-        + (package_data["whizard"]["mpiflags"] if args.mpi else ""),
-        package_data["whizard"]["install"].format(jobs=args.jobs)
-    ], logfile=os.path.join(src_dir, "install.log"))
-    os.chdir("../..")
+    if not os.path.isdir("build"):
+        os.mkdir("build")
+    os.chdir("build")
+    execute_alt_screen(
+        "Installing Whizard...",
+        [
+            package_data["whizard"]["configure"].format(prefix=args.prefix)
+            + (" " + package_data["whizard"]["mpi_flags"] if args.mpi else ""),
+            package_data["whizard"]["install"].format(jobs=args.jobs),
+        ],
+        logfile=os.path.join(src_dir, "install.log"),
+    )
+    os.chdir("../../..")
     if not os.path.isfile(os.path.join(args.prefix, "bin/whizard-config")):
         critical("An error occurred while installing Whizard, see 'install.log' for details")
         sys.exit(1)
     else:
         info(f"[7/{len(package_data)}] Successfully installed Whizard")
+
 
 def install(args):
     info("Checking build dependencies...")
@@ -286,7 +334,10 @@ def install(args):
         os.remove("install.log")
     info(f"Successfully installed VBF_HH_HEFT toolchain to {args.prefix}")
     with open("installation.json", "w") as file:
-        json.dump({
-            "prefix": args.prefix,
-            "mpi": args.mpi,
-        }, file)
+        json.dump(
+            {
+                "prefix": args.prefix,
+                "mpi": args.mpi,
+            },
+            file,
+        )

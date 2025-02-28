@@ -20,4 +20,4 @@ def purge(args):
                 os.remove(os.path.join(get_src_location(), "Grids", f"{conf_hash}.tar.gz"))
                 grid_db.pop(conf_hash)
         with open(os.path.join(get_src_location(), "Grids", "grid_db.json"), "w") as db:
-            json.dump(grid_db, db)
+            json.dump(grid_db, db, indent=4)

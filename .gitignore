@@ -1,0 +1,8 @@
+**/*.pyc
+**/*.log
+download_cache
+Libraries
+Grids
+Fits
+Events
+installation.json
